@@ -92,14 +92,18 @@ export default function Courses() {
   const addToDraft = (id) => setDraftIds(p => new Set([...p, id]));
   const removeFromDraft = (id) => setDraftIds(p => { const s = new Set(p); s.delete(id); return s; });
 
-  // Enrollments — needed for "Because you took 'X'" rails
+  // Enrollments — used by Plan's "Because you took 'X'" rails AND by the
+  // Browse "All / My courses" scope toggle in the filter panel.
   const [enrollments, setEnrollments] = useState([]);
   useEffect(() => {
-    if (view !== 'plan') return;
     api.get('/enrollments')
       .then(r => setEnrollments(r.data.enrollments || []))
       .catch(() => {});
-  }, [view]);
+  }, []);
+
+  // Browse-mode scope: 'all' | 'mine'. Filters the course grid by the
+  // user's enrolled course IDs. Hidden when the user has no enrollments.
+  const [browseScope, setBrowseScope] = useState('all');
 
   // Tier 1
   const [semesterTerm, setSemesterTerm] = useState(params.get('term') || defaultTerm());
@@ -198,6 +202,17 @@ export default function Courses() {
     if (search) next.set('q', search);
     setParams(next, { replace: true });
   }, [view, mode, semesterTerm, types, departments, slots, creditMin, creditMax, halfSemOnly, search, setParams]);
+
+  // Course pool scoped by the Browse "All / My" toggle.
+  const enrolledIdSet = useMemo(
+    () => new Set(enrollments.map(e => e.course?.id).filter(Boolean)),
+    [enrollments]
+  );
+  const visibleCourses = useMemo(() => {
+    if (view !== 'browse' || browseScope === 'all') return courses;
+    if (enrolledIdSet.size === 0) return [];
+    return courses.filter(c => enrolledIdSet.has(c.id));
+  }, [view, browseScope, courses, enrolledIdSet]);
 
   const labelOf = (options, value) => options.find(o => o.value === value)?.label || value;
 
@@ -303,7 +318,7 @@ export default function Courses() {
           <div className="courses-toolbar-filters">
             {mode === 'all' && !loading && (
               <p className="courses-result-meta-inline">
-                Showing <strong>{courses.length}</strong> {courses.length === 1 ? 'course' : 'courses'}
+                Showing <strong>{visibleCourses.length}</strong> {visibleCourses.length === 1 ? 'course' : 'courses'}
                 {totalActiveCount > 0 && (
                   <>
                     {' · '}
@@ -403,6 +418,29 @@ export default function Courses() {
         <DepartmentList query={search} />
       ) : (
         <div className="courses-layout">
+          <div className="courses-browse-sidebar">
+            {enrolledIdSet.size > 0 && (
+              <div className="cb-scope" role="tablist" aria-label="Course scope">
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={browseScope === 'all'}
+                  className={`cb-scope-btn ${browseScope === 'all' ? 'is-active' : ''}`}
+                  onClick={() => setBrowseScope('all')}
+                >
+                  All
+                </button>
+                <button
+                  type="button"
+                  role="tab"
+                  aria-selected={browseScope === 'mine'}
+                  className={`cb-scope-btn ${browseScope === 'mine' ? 'is-active' : ''}`}
+                  onClick={() => setBrowseScope('mine')}
+                >
+                  My courses
+                </button>
+              </div>
+            )}
           <AdvancedFiltersPanel
             permanent
             appliedFilters={appliedFilters}
@@ -427,6 +465,7 @@ export default function Courses() {
             departmentOptions={departmentOptions}
             slotOptions={slotOptions}
           />
+          </div>
 
           <div className="courses-main">
             {appliedFilters.length > 0 && (
@@ -460,17 +499,21 @@ export default function Courses() {
                   <div key={i} className="skeleton" style={{ height: 220, borderRadius: 'var(--radius-lg)' }} />
                 ))}
               </div>
-            ) : courses.length === 0 ? (
+            ) : visibleCourses.length === 0 ? (
               <div className="empty-state">
                 <Search size={48} />
-                <p>No courses found matching your criteria</p>
-                <button className="btn btn-secondary" onClick={clearAll}>
-                  Clear filters
+                <p>
+                  {browseScope === 'mine'
+                    ? "You haven't enrolled in any courses that match these filters."
+                    : 'No courses found matching your criteria'}
+                </p>
+                <button className="btn btn-secondary" onClick={browseScope === 'mine' ? () => setBrowseScope('all') : clearAll}>
+                  {browseScope === 'mine' ? 'Show all courses' : 'Clear filters'}
                 </button>
               </div>
             ) : (
               <div className="courses-grid">
-                {courses.map(course => (
+                {visibleCourses.map(course => (
                   <CourseCard key={course.id} course={course} />
                 ))}
               </div>
@@ -515,14 +558,10 @@ function PlanView({
     [enrolledCourses]
   );
 
-  // Right side panel — pushes content, not an overlay
+  // Draft column — inline third column of .courses-layout when open.
+  // Matches how the legacy /plan page renders its sidebar (part of the
+  // grid, not a fixed/floating panel).
   const [previewOpen, setPreviewOpen] = useState(false);
-  // Body class so the layout shifts left when the panel is open
-  useEffect(() => {
-    if (previewOpen) document.body.classList.add('draft-slideout-open');
-    else document.body.classList.remove('draft-slideout-open');
-    return () => document.body.classList.remove('draft-slideout-open');
-  }, [previewOpen]);
 
   const handleAddPreview = (course) => {
     onAddDraft(course.id);
@@ -553,6 +592,12 @@ function PlanView({
 
   return (
     <>
+      {/* Page header for the Plan view */}
+      <header className="plan-page-header">
+        <h1>Plan your next semester</h1>
+        <p>Discover courses tailored to you, preview your week, and lock in your load before slots fill up.</p>
+      </header>
+
       <DraftPeek
         draftCourses={draftCourses}
         open={draftOpen}
@@ -561,16 +606,28 @@ function PlanView({
         onOpenFull={() => setPreviewOpen(true)}
       />
 
-      {/* Toolbar — Sort sits at the extreme right; interests live in
-          the filter panel on the left (Airbnb feature-chip pattern). */}
+      {/* Toolbar — Sort + Draft on the right. Draft button opens the
+          same DraftSlideout used elsewhere in Plan. */}
       <div className="courses-toolbar plan-toolbar">
         <div className="courses-toolbar-filters" />
         <div className="courses-toolbar-end">
           <PlanSortPill value={sort} onChange={setSort} />
+          <button
+            type="button"
+            className="plan-draft-trigger"
+            onClick={() => setPreviewOpen(true)}
+            aria-label="View draft timetable"
+          >
+            <CalendarIcon size={13} />
+            <span>Draft timetable</span>
+            {draftIds.size > 0 && (
+              <span className="plan-draft-trigger-count">{draftIds.size}</span>
+            )}
+          </button>
         </div>
       </div>
 
-      <div className="courses-layout">
+      <div className={`courses-layout ${previewOpen ? 'with-draft' : ''}`}>
         <div className="plan-sidebar">
           <AdvancedFiltersPanel
             permanent
@@ -655,16 +712,19 @@ function PlanView({
             </div>
           )}
         </div>
-      </div>
 
-      <DraftSlideout
-        open={previewOpen}
-        onClose={() => setPreviewOpen(false)}
-        enrolledCourses={enrolledCourses}
-        draftCourses={draftCourses}
-        targetCredits={targetCredits}
-        onRemove={onRemoveDraft}
-      />
+        {previewOpen && (
+          <aside className="plan-draft-col" aria-label="Draft timetable">
+            <DraftTimetable
+              enrolledCourses={enrolledCourses}
+              draftCourses={draftCourses}
+              targetCredits={targetCredits}
+              onRemoveDraft={onRemoveDraft}
+              onClose={() => setPreviewOpen(false)}
+            />
+          </aside>
+        )}
+      </div>
     </>
   );
 }

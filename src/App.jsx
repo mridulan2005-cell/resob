@@ -5,7 +5,7 @@ import AppLayout from './layouts/AppLayout';
 import Courses from './pages/Courses';
 import CourseDetail from './pages/CourseDetail';
 import DepartmentDetail from './pages/DepartmentDetail';
-import Resources from './pages/Resources';
+import Community from './pages/Community';
 import Dashboard from './pages/Dashboard';
 import Timetable from './pages/Timetable';
 import Profile from './pages/Profile';
@@ -27,7 +27,8 @@ export default function App() {
               <Route path="/courses"            element={<Courses />} />
               <Route path="/courses/:id"        element={<CourseDetail />} />
               <Route path="/departments/:slug"  element={<DepartmentDetail />} />
-              <Route path="/resources"          element={<Resources />} />
+              <Route path="/community"          element={<Community />} />
+              <Route path="/resources"          element={<Navigate to="/community" replace />} />
               <Route path="/dashboard"          element={<Dashboard />} />
               <Route path="/timetable"          element={<Timetable />} />
               <Route path="/plan"               element={<Plan />} />

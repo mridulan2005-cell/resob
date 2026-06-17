@@ -16,18 +16,11 @@ const ITEMS = [
     to: '/timetable?action=add',
   },
   {
-    id: 'upload',
-    label: 'Upload resource',
-    sub: 'PYQs, notes, slides',
-    Icon: Upload,
-    to: '/resources?action=upload',
-  },
-  {
     id: 'request',
     label: 'Request resource',
     sub: 'Ask the community',
     Icon: HelpCircle,
-    to: '/resources?action=request',
+    to: '/community?action=request',
   },
 ];
 

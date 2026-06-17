@@ -65,15 +65,27 @@ export default function AdvancedFiltersPanel({
               label="Interests"
               onClear={interests.length > 0 ? () => setInterests([]) : null}
             />
-            {interests.length === 0 ? (
-              <button
-                type="button"
-                className="adv-interest-add"
-                onClick={onEditInterests}
-              >
-                <Plus size={13} /> Add interests
-              </button>
-            ) : (
+            {/* Filled input-styled trigger — matches the Department
+                dropdown chrome (same height, same padding, secondary
+                fill). Clicking opens the interest picker. */}
+            <button
+              type="button"
+              className="adv-interest-input"
+              onClick={onEditInterests}
+            >
+              {interests.length === 0 ? (
+                <span className="adv-interest-input-placeholder">
+                  Tech? Robotics? Pick a few…
+                </span>
+              ) : (
+                <span className="adv-interest-input-value">
+                  {interests.slice(0, 3).join(', ')}
+                  {interests.length > 3 && ` +${interests.length - 3}`}
+                </span>
+              )}
+              <ChevronDown size={14} className="adv-interest-input-caret" />
+            </button>
+            {interests.length > 0 && (
               <div className="adv-interest-chips">
                 {interests.map(v => (
                   <button
@@ -90,13 +102,6 @@ export default function AdvancedFiltersPanel({
                     <X size={11} className="adv-interest-chip-x" />
                   </button>
                 ))}
-                <button
-                  type="button"
-                  className="adv-interest-add adv-interest-add-inline"
-                  onClick={onEditInterests}
-                >
-                  <Plus size={11} /> Edit
-                </button>
               </div>
             )}
           </section>
@@ -514,4 +519,61 @@ function SlotPicker({ options, selected, onChange, onClear }) {
                         <span className="slot-row-time">{sched.time}</span>
                       </span>
                     )}
-             
+                  </button>
+                );
+              })}
+            </div>
+            {selected.length > 0 && (
+              <div className="adv-dropdown-footer">
+                <button type="button" className="link-btn" onClick={() => onChange([])}>Clear selection</button>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Info reference: full schedule shown all at once */}
+      {infoOpen && (
+        <div className="slot-schedule-ref" role="region" aria-label="Slot schedule reference">
+          <div className="slot-schedule-ref-head">
+            <strong>Slot schedule</strong>
+            <button type="button" className="btn-ghost" onClick={() => setInfoOpen(false)} aria-label="Close">
+              <X size={12} />
+            </button>
+          </div>
+          <ul className="slot-schedule-ref-list">
+            {Object.entries(SLOT_SCHEDULE).map(([name, s]) => (
+              <li key={name}>
+                <span className="slot-schedule-ref-name">{name}</span>
+                <span className="slot-schedule-ref-days">
+                  {s.days.map(d => <span key={d}>{d}</span>)}
+                </span>
+                <span className="slot-schedule-ref-time">{s.time}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+    </>
+  );
+}
+
+function ToggleRow({ label, hint, checked, onChange }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      className={`adv-toggle ${checked ? 'on' : ''}`}
+      onClick={() => onChange(!checked)}
+    >
+      <div className="adv-toggle-text">
+        <span className="adv-toggle-label">{label}</span>
+        {hint && <span className="adv-toggle-hint">{hint}</span>}
+      </div>
+      <span className="adv-toggle-track" aria-hidden>
+        <span className="adv-toggle-thumb" />
+      </span>
+    </button>
+  );
+}

@@ -1,16 +1,15 @@
 import { useState, useEffect } from 'react';
 import { NavLink, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, BookOpen, FolderOpen, Calendar, LogOut, Menu, X, Sparkles, PanelLeftClose } from 'lucide-react';
+import { LayoutDashboard, BookOpen, Users, Calendar, LogOut, Menu, X, Sparkles, PanelLeftClose } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 // Profile is reachable by clicking the user chip at the bottom — no
 // dedicated nav item needed.
 const navItems = [
   { icon: LayoutDashboard, label: 'Home',      path: '/dashboard', auth: true },
-  { icon: FolderOpen,      label: 'Resources', path: '/resources', auth: false },
   { icon: BookOpen,        label: 'Courses',   path: '/courses',   auth: false },
   { icon: Calendar,        label: 'Timetable', path: '/timetable', auth: true },
-  { icon: Sparkles,        label: 'Plan',      path: '/plan',      auth: false, seasonal: true },
+  { icon: Users,           label: 'Community', path: '/community', auth: false },
 ];
 
 export default function RailNav({ collapsed, onToggle }) {

@@ -7,7 +7,7 @@ import QuickAddMenu from './QuickAddMenu';
 
 const ROUTE_LABELS = {
   '/dashboard':   'Home',
-  '/resources':   'Resources',
+  '/community':   'Community',
   '/courses':     'Courses',
   '/timetable':   'Timetable',
   '/schedule':    'Timetable',
@@ -74,12 +74,11 @@ export default function TopBar({ onOpenPalette }) {
     setParams(next, { replace: true });
   };
 
-  // Contextual Resources/Requests toggle — only on /resources
-  const onResources = location.pathname === '/resources';
-  const resourceTab = params.get('tab') === 'requests' ? 'requests' : 'resources';
-  const setResourceTab = (t) => {
+  // Resources/Requests toggle retired — Community is now a single view.
+  const onResources = false;
+  const resourceTab = 'resources';
+  const setResourceTab = () => {
     const next = new URLSearchParams(params);
-    if (t === 'requests') next.set('tab', 'requests'); else next.delete('tab');
     setParams(next, { replace: true });
   };
 

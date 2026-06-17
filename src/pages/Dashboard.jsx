@@ -11,6 +11,7 @@ import {
   buildItems, startOfDay, endOfDay, addDays, ITEM_KIND, isSameDay,
 } from '../utils/schedule';
 import { getRecents, relativeTime } from '../utils/recents';
+import RequestCard from '../components/RequestCard';
 
 const TYPE_META = {
   lecture:  { label: 'LEC',   color: 'var(--core-color)',     icon: BookOpen },
@@ -60,9 +61,30 @@ function relativeDayLabel(date, today) {
 }
 
 const QUICK_ACTIONS = [
-  { label: 'Find a resource',  to: '/resources',                Icon: FolderOpen },
-  { label: 'Plan my timetable', to: '/courses?view=plan',       Icon: Sparkles },
-  { label: 'Upload resource',  to: '/resources?action=upload',  Icon: Upload },
+  {
+    label: 'Browse community',
+    sub: 'See open requests',
+    to: '/community',
+    Icon: FolderOpen,
+  },
+  {
+    label: 'Plan my timetable',
+    sub: 'Pick courses for next sem',
+    to: '/courses?view=plan',
+    Icon: Sparkles,
+  },
+  {
+    label: 'Request resource',
+    sub: 'Ask the community',
+    to: '/community?action=request',
+    Icon: Upload,
+  },
+  {
+    label: 'Add to timetable',
+    sub: 'Event, reminder, or course',
+    to: '/timetable?action=add',
+    Icon: CalendarIcon,
+  },
 ];
 
 export default function Dashboard() {
@@ -126,80 +148,60 @@ export default function Dashboard() {
       .slice(0, 4);
   }, [enrollments, events, reminders, todayStart, weekEnd]);
 
-  // Natural-language input that pops the command palette on Enter.
-  const [askText, setAskText] = useState('');
-  const submitAsk = () => {
-    window.dispatchEvent(new CustomEvent('open-command-palette'));
-    setAskText('');
-  };
-  const onAskKey = (e) => {
-    if (e.key === 'Enter' && askText.trim()) {
-      e.preventDefault();
-      submitAsk();
-    }
-  };
+
+
 
   return (
     <div className="page-container dashboard-v2">
-      <div className="dash2-grid">
+      <div className="dash3-grid">
         {/* ────────── Main column ────────── */}
-        <main className="dash2-main">
-          <header className="dash2-greeting">
-            <h1>{greeting()}, {user?.name?.split(' ')[0] || 'there'}</h1>
-          </header>
-
-          {/* Ask + quick actions — one tight section group */}
-          <section className="dash2-ask-group" aria-label="Quick actions">
-            <div className="dash2-hero">
-              <input
-                type="text"
-                className="dash2-hero-input"
-                value={askText}
-                onChange={(e) => setAskText(e.target.value)}
-                onKeyDown={onAskKey}
-                placeholder="What do you need today?"
-                aria-label="Ask anything"
-              />
-              <kbd className="dash2-hero-kbd" aria-hidden>⌘K</kbd>
-            </div>
-            <div className="dash2-quick-row">
-              {QUICK_ACTIONS.map(({ label, to, Icon }) => (
+        <main className="dash3-main">
+          {/* Section heading (no greeting line — keeps page tight) */}
+          <section className="dash3-action-section" aria-label="Quick actions">
+            <div className="dash3-actions-grid">
+              {QUICK_ACTIONS.map(({ label, to }) => (
                 <button
                   key={label}
                   type="button"
-                  className="dash2-quick-chip"
+                  className="dash3-action-card"
                   onClick={() => navigate(to)}
                 >
-                  <Icon size={14} />
-                  <span>{label}</span>
+                  <span className="dash3-action-illust" aria-hidden>
+                    <img src="/action-placeholder.svg" alt="" 
+                    style={{ width: "250px", height: "250px" }}
+                    />
+                  </span>
+                  <span className="dash3-action-title">{label}</span>
                 </button>
               ))}
             </div>
           </section>
 
-          {/* Continue where you left off */}
+          {/* Continue where you left off — wide cards with thumbnail area */}
           {recents.length > 0 && (
-            <section className="dash2-section" aria-labelledby="dash2-continue-heading">
-              <div className="dash2-section-head">
-                <h2 id="dash2-continue-heading">Continue where you left off</h2>
-                <button type="button" className="link-btn" onClick={() => navigate('/courses')}>
-                  Browse all <ArrowRight size={13} />
-                </button>
+            <section className="dash3-section" aria-labelledby="dash3-continue-heading">
+              <div className="dash3-section-head">
+                <h2 id="dash3-continue-heading">Continue where you left off</h2>
               </div>
-              <ul className="dash2-continue-row" role="list">
-                {recents.map(r => (
+              <ul className="dash3-continue-grid" role="list">
+                {recents.slice(0, 3).map(r => (
                   <li key={`${r.type}-${r.id}`}>
-                    <button type="button" className="dash2-continue-card" onClick={() => navigate(r.route)}>
-                      <span className="dash2-continue-card-head">
-                        <span className="dash2-continue-card-code">{r.code}</span>
-                        {r.credits != null && (
-                          <span className="dash2-continue-card-cr">{r.credits}cr</span>
-                        )}
+                    <button
+                      type="button"
+                      className="dash3-continue-card"
+                      onClick={() => navigate(r.route)}
+                    >
+                      <span className="dash3-continue-thumb" aria-hidden>
+                        <FolderOpen size={26} strokeWidth={1.4} />
                       </span>
-                      <span className="dash2-continue-card-name" title={r.name}>{r.name}</span>
-                      <span className="dash2-continue-card-meta">
-                        <Clock size={11} /> {relativeTime(r.ts)}
-                        <ArrowUpRight size={12} className="dash2-continue-card-arrow" />
+                      <span className="dash3-continue-foot">
+                        <span className="dash3-continue-title">
+                          {r.code}
+                          {r.name && <> · <span className="dash3-continue-name">{r.name}</span></>}
+                        </span>
+                        <span className="dash3-continue-meta">
+                          Last viewed {relativeTime(r.ts)}
+                        </span>
                       </span>
                     </button>
                   </li>
@@ -208,145 +210,149 @@ export default function Dashboard() {
             </section>
           )}
 
-          {/* Top resource requests */}
-          <section className="dash2-section" aria-labelledby="dash2-requests-heading">
-            <div className="dash2-section-head">
-              <h2 id="dash2-requests-heading">Top resource requests</h2>
+          {/* Top resource requests — same closed table as Resources page */}
+          <section className="dash3-requests-section" aria-labelledby="dash3-requests-heading">
+            <div className="dash3-section-head">
+              <h2 id="dash3-requests-heading">Top resource requests</h2>
               <button
                 type="button"
                 className="link-btn"
-                onClick={() => navigate('/resources?tab=requests')}
+                onClick={() => navigate('/community')}
               >
-                View all <ArrowRight size={13} />
+                View all
               </button>
             </div>
 
             {loading ? (
               <div className="skeleton" style={{ height: 160, borderRadius: 'var(--radius-md)' }} />
             ) : topRequests.length === 0 ? (
-              <p className="dash2-empty-line">
+              <p className="dash3-empty-line">
                 No open requests right now. Quiet day on the queue.
               </p>
             ) : (
-              <ul className="dash2-req-list" role="list">
-                {topRequests.map(r => (
-                  <li key={r.id} className="dash2-req-row">
-                    <button
-                      type="button"
-                      className="dash2-req-body"
-                      onClick={() => navigate(`/resources?tab=requests&q=${encodeURIComponent(r.course_code || '')}`)}
-                    >
-                      <span className="dash2-req-title">{r.title}</span>
-                      <span className="dash2-req-meta">
-                        {r.course_code && <span className="dash2-req-course">{r.course_code}</span>}
-                        {r.type && <span className="dash2-req-tag">{r.type.toUpperCase()}</span>}
-                        {r.requester_name && (
-                          <span>by {r.requester_name.split(' ')[0]}</span>
-                        )}
-                      </span>
-                    </button>
-                    <div className="dash2-req-votes">
-                      <Sparkles size={11} />
-                      <span>{r.upvotes || 0}</span>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+              <section className="rt-card requests-card" aria-label="Top resource requests">
+                <ul className="rt-body">
+                  {topRequests.map(r => (
+                    <RequestCard key={r.id} request={r} siblingRequests={topRequests} />
+                  ))}
+                </ul>
+              </section>
             )}
           </section>
         </main>
 
         {/* ────────── Right rail ────────── */}
-        <aside className="dash2-rail" aria-label="Today and upcoming">
-          <section className="dash2-today-card" aria-labelledby="dash2-today-heading">
-            <div className="dash2-today-card-head">
-              <div className="dash2-today-card-titles">
-                <span className="dash2-today-card-date">{fmtFullDate(today)}</span>
-                <h3 id="dash2-today-heading">Today's schedule</h3>
-              </div>
-              <div className="dash2-today-toggle" role="tablist" aria-label="Today view">
+        {/* Rail itself only renders when at least one of its cards has
+            content (or we're still loading). Empty sections are skipped
+            entirely — no placeholder cards on the canvas. */}
+        {(loading || todayItems.length > 0 || upcomingDeadlines.length > 0) && (
+        <aside className="dash3-rail" aria-label="Today and upcoming">
+          {/* Today's Agenda — only when there are items (or still loading) */}
+          {(loading || todayItems.length > 0) && (
+          <section className="dash3-card" aria-labelledby="dash3-today-heading">
+            <div className="dash3-card-head">
+              <h3 id="dash3-today-heading">Today's agenda</h3>
+              <div className="dash3-toggle" role="tablist" aria-label="Today view">
                 <button
                   type="button"
                   role="tab"
                   aria-selected={todayView === 'timeline'}
                   title="Timeline view"
-                  className={`dash2-today-toggle-btn ${todayView === 'timeline' ? 'active' : ''}`}
+                  className={`dash3-toggle-btn ${todayView === 'timeline' ? 'active' : ''}`}
                   onClick={() => setTodayView('timeline')}
                 >
-                  <Clock size={13} />
+                  <Clock size={12} />
                 </button>
                 <button
                   type="button"
                   role="tab"
                   aria-selected={todayView === 'list'}
                   title="List view"
-                  className={`dash2-today-toggle-btn ${todayView === 'list' ? 'active' : ''}`}
+                  className={`dash3-toggle-btn ${todayView === 'list' ? 'active' : ''}`}
                   onClick={() => setTodayView('list')}
                 >
-                  <ListIcon size={13} />
+                  <ListIcon size={12} />
                 </button>
               </div>
             </div>
 
-            <div className="dash2-today-body">
-              {loading ? (
-                <div className="skeleton" style={{ height: 200, borderRadius: 'var(--radius-md)' }} />
-              ) : todayItems.length === 0 ? (
-                <p className="dash2-empty-line">Nothing scheduled. Enjoy the breather.</p>
-              ) : todayView === 'timeline' ? (
-                <TodayTimeline items={todayItems} today={today} />
-              ) : (
-                <TodayList items={todayItems} />
-              )}
-            </div>
-
-            {todayItems.length > 5 && todayView === 'list' && (
-              <button
-                type="button"
-                className="link-btn dash2-rail-more"
-                onClick={() => navigate('/timetable')}
-              >
-                See all {todayItems.length} <ArrowRight size={12} />
-              </button>
+            {loading ? (
+              <div className="skeleton" style={{ height: 220, borderRadius: 'var(--radius-md)' }} />
+            ) : (
+              /* Bounded timeline frame — dashed rail on the left with
+                 time markers, event cards on the right. Matches the
+                 reference image: filled bg, rounded box around the
+                 whole list. */
+              <div className="dash3-tl-frame">
+                <ol className="dash3-tl" role="list">
+                  {todayItems.slice(0, 6).map((it) => {
+                    const meta = TYPE_META[it.type];
+                    const now = new Date();
+                    const ongoing = now >= it.start && now < it.end;
+                    const past = now >= it.end;
+                    return (
+                      <li
+                        key={it.id}
+                        className={`dash3-tl-row ${ongoing ? 'is-now' : ''} ${past ? 'is-past' : ''}`}
+                        style={{ '--type-color': meta.color }}
+                      >
+                        <span className="dash3-tl-time">{timeOfDay(it.start)}</span>
+                        <span className="dash3-tl-rail" aria-hidden>
+                          <span className="dash3-tl-dot" />
+                        </span>
+                        <div className="dash3-tl-card">
+                          <div className="dash3-tl-card-title">{it.title}</div>
+                          <div className="dash3-tl-card-times">
+                            {timeOfDay(it.start)} – {timeOfDay(it.end)}
+                            {it.location && (
+                              <> <span className="dash3-tl-sep">|</span> {it.location}</>
+                            )}
+                          </div>
+                          <span className="dash3-tl-chip">{meta.label}</span>
+                        </div>
+                      </li>
+                    );
+                  })}
+                </ol>
+              </div>
             )}
           </section>
+          )}
 
-          <section className="dash2-rail-card" aria-labelledby="dash2-upcoming-heading">
-            <div className="dash2-rail-head">
-              <h3 id="dash2-upcoming-heading">Upcoming deadlines</h3>
+          {/* Critical Deadlines — only when there are deadlines */}
+          {(loading || upcomingDeadlines.length > 0) && (
+          <section className="dash3-card" aria-labelledby="dash3-deadlines-heading">
+            <div className="dash3-card-head">
+              <h3 id="dash3-deadlines-heading">Critical deadlines</h3>
             </div>
             {loading ? (
-              <div className="skeleton" style={{ height: 120, borderRadius: 'var(--radius-md)', marginTop: 'var(--sp-3)' }} />
-            ) : upcomingDeadlines.length === 0 ? (
-              <p className="dash2-empty-line">All clear · next 7 days</p>
+              <div className="skeleton" style={{ height: 100, borderRadius: 'var(--radius-md)' }} />
             ) : (
-              <ul className="dash2-upcoming-list" role="list">
-                {upcomingDeadlines.map(it => {
-                  const isExam = it.kind === ITEM_KIND.EXAM;
+              <ul className="dash3-deadlines" role="list">
+                {upcomingDeadlines.map((it) => {
+                  const daysLeft = Math.max(0, Math.ceil((it.start - today) / 86400000));
+                  const urgent = daysLeft <= 1;
+                  const soon   = daysLeft <= 3 && !urgent;
+                  const tone   = urgent ? 'danger' : soon ? 'warning' : 'ok';
                   return (
-                    <li key={it.id} className="dash2-upcoming-item">
-                      <div className="dash2-upcoming-date">
-                        <span className="dash2-upcoming-day-num">
-                          {new Date(it.start).getDate()}
-                        </span>
-                        <span className="dash2-upcoming-day-mo">
-                          {new Date(it.start).toLocaleDateString('en-IN', { month: 'short' })}
-                        </span>
-                      </div>
-                      <div className="dash2-upcoming-body">
-                        <span className="dash2-upcoming-title">{it.title}</span>
-                        <span className="dash2-upcoming-meta">
-                          {relativeDayLabel(it.start, today)} · {timeOfDay(it.start)}
-                          {isExam && <span className="dash2-upcoming-tag">EXAM</span>}
-                        </span>
-                      </div>
+                    <li
+                      key={it.id}
+                      className={`dash3-deadline-row tone-${tone}`}
+                    >
+                      <span className="dash3-deadline-bullet" aria-hidden />
+                      <span className="dash3-deadline-title">{it.title}</span>
+                      <span className="dash3-deadline-when">
+                        {relativeDayLabel(it.start, today)}
+                      </span>
                     </li>
                   );
                 })}
               </ul>
             )}
           </section>
+          )}
         </aside>
+        )}
       </div>
     </div>
   );

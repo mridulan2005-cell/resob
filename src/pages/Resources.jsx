@@ -13,6 +13,7 @@ import RequestCard from '../components/RequestCard';
 import UploadModal from '../components/UploadModal';
 import RequestModal from '../components/RequestModal';
 import FilterChipSelect from '../components/FilterChipSelect';
+import CourseBasketPanel from '../components/CourseBasketPanel';
 
 /* ─── Defaults ─────────────────────────────────────────────── */
 
@@ -250,13 +251,8 @@ export default function Resources() {
         <div className="resources-toolbar-filters">
           {activeTab === 'resources' ? (
             <>
-              <FilterChipSelect
-                label="Course"
-                options={courseFilterOptions}
-                selected={courseCodes}
-                onChange={setCourseCodes}
-                searchable
-              />
+              {/* Course filter moved into the left Subjects panel — see
+                  CourseBasketPanel below. Keep only type + year here. */}
               <PillSelect
                 value={type}
                 options={TYPE_OPTIONS}
@@ -271,29 +267,10 @@ export default function Resources() {
               />
             </>
           ) : (
-            <>
-              <FilterChipSelect
-                label="Course"
-                options={courseFilterOptions}
-                selected={requestCourses}
-                onChange={setRequestCourses}
-                searchable
-              />
-              <div className="filter-chips" role="tablist" aria-label="Filter by status">
-                {REQUEST_STATUS_OPTIONS.map(opt => (
-                  <button
-                    key={opt.value || 'all'}
-                    type="button"
-                    role="tab"
-                    aria-selected={requestStatus === opt.value}
-                    className={`filter-chip ${requestStatus === opt.value ? 'active' : ''}`}
-                    onClick={() => setRequestStatus(opt.value)}
-                  >
-                    {opt.label}
-                  </button>
-                ))}
-              </div>
-            </>
+            /* Requests-tab filters live in the left panel + table card,
+               not in the toolbar. Keep this slot empty to preserve the
+               toolbar grid balance. */
+            null
           )}
         </div>
 
@@ -356,17 +333,24 @@ export default function Resources() {
             </div>
           )
         ) : activeTab === 'resources' ? (
-          sortedResources.length === 0 ? (
-            <div className="empty-state glass-card" style={{ padding: 'var(--sp-10)' }}>
-              <FolderOpen size={48} />
-              <p>Can't find what you're looking for? Try asking for it.</p>
-              {user && (
-                <button type="button" className="btn btn-secondary" onClick={() => setShowRequest(true)}>
-                  <HelpCircle size={16} /> Request
-                </button>
-              )}
-            </div>
-          ) : (
+          <div className="requests-layout">
+            <CourseBasketPanel
+              allCourses={allCourses}
+              selected={courseCodes}
+              onChange={setCourseCodes}
+            />
+            <div className="requests-layout-main">
+            {sortedResources.length === 0 ? (
+              <div className="empty-state glass-card" style={{ padding: 'var(--sp-10)' }}>
+                <FolderOpen size={48} />
+                <p>Can't find what you're looking for? Try asking for it.</p>
+                {user && (
+                  <button type="button" className="btn btn-secondary" onClick={() => setShowRequest(true)}>
+                    <HelpCircle size={16} /> Request
+                  </button>
+                )}
+              </div>
+            ) : (
             <>
               <p className="resources-count">
                 {sortedResources.length} {sortedResources.length === 1 ? 'resource' : 'resources'}
@@ -385,35 +369,62 @@ export default function Resources() {
                 </div>
               )}
             </>
-          )
-        ) : (
-          filteredRequests.length === 0 ? (
-            <div className="empty-state glass-card" style={{ padding: 'var(--sp-10)' }}>
-              <HelpCircle size={48} />
-              <p>No {requestStatus || ''} requests. Be the first to ask.</p>
-              {user && (
-                <button type="button" className="btn btn-primary" onClick={() => setShowRequest(true)}>
-                  Post a request
-                </button>
-              )}
+            )}
             </div>
-          ) : (
-            <>
-              <p className="resources-count">
-                {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'}
-              </p>
-              <ul className="requests-list">
-                {filteredRequests.map(r => (
-                  <RequestCard
-                    key={r.id}
-                    request={r}
-                    siblingRequests={requests}
-                    onChanged={fetchRequests}
-                  />
-                ))}
-              </ul>
-            </>
-          )
+          </div>
+        ) : (
+          <div className="requests-layout">
+            <CourseBasketPanel
+              allCourses={allCourses}
+              selected={requestCourses}
+              onChange={setRequestCourses}
+            />
+
+            <section className="rt-card requests-card" aria-label="Requests">
+              {/* CTA strip at the very top */}
+              <div className="rt-cta">
+                <span className="rt-cta-text">Not finding what you want?</span>
+                <button
+                  type="button"
+                  className="btn btn-secondary rt-cta-btn"
+                  onClick={() => setShowRequest(true)}
+                >
+                  <HelpCircle size={14} /> Request resource
+                </button>
+              </div>
+
+              {/* Status filter — outlined pill (no fill) */}
+              <div className="rt-toolbar">
+                <PillSelect
+                  value={requestStatus}
+                  options={REQUEST_STATUS_OPTIONS}
+                  onChange={setRequestStatus}
+                  ariaLabel="Filter by status"
+                />
+                <span className="rt-toolbar-count">
+                  {filteredRequests.length} {filteredRequests.length === 1 ? 'request' : 'requests'}
+                </span>
+              </div>
+
+              {filteredRequests.length === 0 ? (
+                <div className="rt-empty">
+                  <HelpCircle size={32} />
+                  <p>No {requestStatus || ''} requests yet. Be the first to ask.</p>
+                </div>
+              ) : (
+                <ul className="rt-body">
+                  {filteredRequests.map(r => (
+                    <RequestCard
+                      key={r.id}
+                      request={r}
+                      siblingRequests={requests}
+                      onChanged={fetchRequests}
+                    />
+                  ))}
+                </ul>
+              )}
+            </section>
+          </div>
         )}
       </section>
 
