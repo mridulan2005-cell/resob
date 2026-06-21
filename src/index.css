@@ -7251,15 +7251,28 @@ li + li > .dash-course-row { margin-top: 2px; }
   line-height: 1.2;
   transition: opacity var(--duration-fast);
 }
+/* Enrolled / core courses — solid filled, reads as "locked in". */
 .draft-tt-block.enrolled {
-  background: rgba(0,0,0,0.06);
-  border: 1px solid rgba(0,0,0,0.12);
-  color: var(--text-muted);
+  background: var(--bcolor);
+  border: 1px solid var(--bcolor);
+  color: #FFFFFF;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
+/* Draft (newly added preview) — dashed outline + hatched stripe fill,
+   reads as "pending / preview". Distinctly different from enrolled.
+   Pattern: Google Calendar tentative event, Notion proposed block. */
 .draft-tt-block.draft {
-  background: color-mix(in srgb, var(--bcolor) 18%, transparent);
-  border: 1.5px solid var(--bcolor);
+  background:
+    repeating-linear-gradient(
+      135deg,
+      color-mix(in srgb, var(--bcolor) 22%, transparent) 0,
+      color-mix(in srgb, var(--bcolor) 22%, transparent) 6px,
+      color-mix(in srgb, var(--bcolor) 8%, transparent) 6px,
+      color-mix(in srgb, var(--bcolor) 8%, transparent) 12px
+    );
+  border: 1.5px dashed var(--bcolor);
   color: var(--text-primary);
+  box-shadow: none;
 }
 .draft-tt-block.clash { border-style: dashed; opacity: 0.85; }
 .draft-tt-block-code { pointer-events: none; }
@@ -10576,17 +10589,116 @@ body.filters-open .main-wrap.expanded { margin-left: var(--rail-width-expanded);
 }
 
 /* ============================================================
-   + New trigger — secondary-fill chrome
+   + New trigger — accent-filled (primary action in the topbar)
    ============================================================ */
 .quick-add-trigger {
-  background: var(--bg-card-hover);
-  border: 1px solid var(--border-color);
+  background: var(--primary-500);
+  border: 1px solid var(--primary-500);
+  color: #FFFFFF;
 }
 .quick-add-trigger:hover {
-  background: var(--bg-card-hover);
-  border-color: var(--border-color-hover);
-  filter: brightness(1.05);
+  background: var(--primary-400);
+  border-color: var(--primary-400);
+  filter: none;
 }
+.quick-add-trigger svg,
+.quick-add-trigger .quick-add-caret {
+  color: rgba(255, 255, 255, 0.85);
+}
+.quick-add-trigger:hover svg,
+.quick-add-trigger:hover .quick-add-caret {
+  color: #FFFFFF;
+}
+
+/* ============================================================
+   Typography + spacing canon
+   ------------------------------------------------------------
+   Single source of truth for headings, body, meta, and inter-
+   section gaps. Page-specific h1/h2/h3 rules normalize to these.
+   Anything else that defines its own size is now legacy and
+   should fall back to these via the cascade.
+   ============================================================ */
+
+/* Page header — h1 used at the top of Community, Plan, etc. */
+.page-h1,
+.community-header h1,
+.plan-page-header h1,
+.dash3-h1 {
+  font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  color: var(--text-primary);
+  margin: 0 0 6px;
+}
+
+/* Page sub — muted line that follows page h1 */
+.page-sub,
+.community-header p,
+.plan-page-header p {
+  font-size: 0.88rem;
+  font-weight: 400;
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Section heading inside a page (e.g., "Continue where you left off",
+   "Top resource requests", "Today's agenda" card head, etc.) */
+.dash3-section-head h2,
+.dash3-card-head h2,
+.dash3-card-head h3,
+.dash2-section-head h2,
+.community-section-head h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+  color: var(--text-primary);
+  margin: 0;
+}
+
+/* Body — default text inside cards/rows */
+.dash3-action-title,
+.dash3-continue-title,
+.rt-title,
+.dash3-tl-card-title {
+  font-size: 0.92rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.3;
+}
+
+/* Meta — muted captions, timestamps, "X requests", etc. */
+.dash3-continue-meta,
+.rt-author,
+.rt-author-time,
+.rt-toolbar-count,
+.dash3-tl-card-times,
+.dash3-empty-line,
+.rt-cta-text {
+  font-size: 0.82rem;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+
+/* Eyebrow / uppercase mini-label (used on date headers, table heads) */
+.dash3-rail-eyebrow,
+.tc-table-head,
+.adv-section-label,
+.cb-panel-title {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+
+/* Inter-section gap — between distinct sections in a column.
+   Cards inside the same section keep their tighter internal gap. */
+.dash3-main { gap: var(--sp-6); }
+.dash3-rail { gap: var(--sp-4); }
+
 
 /* ============================================================
    Plan onboarding — Airbnb "Recommended for you" tile grid
@@ -10883,17 +10995,57 @@ body.filters-open .main-wrap.expanded { margin-left: var(--rail-width-expanded);
   color: var(--text-muted);
 }
 
+/* Community layout: the page fills the viewport height; the side rails
+   (Subjects + Top Contributors) stay fully visible without scrolling;
+   only the middle requests card scrolls internally.
+   Pattern: Slack inbox, Linear views, Notion docs page. */
 .community-layout {
   display: grid;
   grid-template-columns: 220px minmax(0, 1fr) 320px;
   gap: var(--sp-5);
-  align-items: start;
+  align-items: stretch;
+  height: calc(100vh - 56px - 56px - var(--sp-4) - var(--sp-6));
+  /* topbar (56) + community-header (~56) + bottom breathing room */
+  min-height: 480px;
+  overflow: hidden;
 }
+.community-layout > .cb-panel,
+.community-layout > .tc-card {
+  height: 100%;
+  overflow: visible;       /* keep flyouts visible for the subjects panel */
+}
+.community-layout > .tc-card {
+  position: static;        /* no sticky needed — column itself is fixed */
+  top: auto;
+  overflow-y: auto;        /* in case contributor list is taller */
+}
+.community-layout > .requests-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;        /* card frame stays fixed */
+}
+.community-layout > .requests-card > .rt-cta,
+.community-layout > .requests-card > .rt-toolbar {
+  flex-shrink: 0;          /* CTA + filter row stay pinned */
+}
+.community-layout > .requests-card > .rt-body,
+.community-layout > .requests-card > .rt-empty,
+.community-layout > .requests-card > .rt-skeleton {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;        /* this is the only thing that scrolls */
+}
+
 @media (max-width: 1180px) {
   .community-layout {
     grid-template-columns: 220px minmax(0, 1fr);
+    height: auto;          /* let the page scroll naturally on smaller widths */
+    overflow: visible;
   }
-  .community-layout > .tc-card { grid-column: 1 / -1; }
+  .community-layout > .tc-card { grid-column: 1 / -1; height: auto; }
+  .community-layout > .requests-card { height: auto; }
+  .community-layout > .requests-card > .rt-body { overflow-y: visible; }
 }
 @media (max-width: 900px) {
   .community-layout { grid-template-columns: 1fr; }
