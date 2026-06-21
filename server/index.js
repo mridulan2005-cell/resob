@@ -52,3 +52,14 @@ app.listen(PORT, () => {
   console.log(`\n🚀 ResoBin server running on http://localhost:${PORT}`);
   console.log(`   API: http://localhost:${PORT}/api\n`);
 });
+
+// Keep the process alive even if a stray async error escapes a route
+// handler. Without these, a single unhandled rejection takes the whole
+// server down and every subsequent /api call fails ("backend isn't
+// fetching"). We log loudly instead of exiting.
+process.on('uncaughtException', (err) => {
+  console.error('Uncaught exception (server kept alive):', err);
+});
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection (server kept alive):', reason);
+});

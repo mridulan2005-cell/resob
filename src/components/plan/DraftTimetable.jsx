@@ -1,5 +1,5 @@
 import { useMemo } from 'react';
-import { X, AlertTriangle, PanelRightClose } from 'lucide-react';
+import { X, AlertTriangle, PanelRightClose, Bookmark } from 'lucide-react';
 import { SLOT_SCHEDULE } from '../../utils/constants';
 import { colorForCourse } from '../../utils/schedule';
 
@@ -24,7 +24,14 @@ function toTop(min) {
   return Math.max(0, (min - START_MIN) * PX_PER_MIN);
 }
 
-export default function DraftTimetable({ enrolledCourses, draftCourses, targetCredits, onRemoveDraft, onClose }) {
+// Core courses share one muted colour so the week reads calmly; other
+// course types keep their distinct per-course colour.
+const CORE_COLOR = 'var(--primary-400)';
+function blockColor(course) {
+  return course.course_type === 'core' ? CORE_COLOR : colorForCourse(course.id);
+}
+
+export default function DraftTimetable({ enrolledCourses, draftCourses, targetCredits, onRemoveDraft, onClose, onSave }) {
   const { blocks, clashSet } = useMemo(() => {
     const all = [];
 
@@ -33,7 +40,7 @@ export default function DraftTimetable({ enrolledCourses, draftCourses, targetCr
       if (!sched) return;
       const { start, end } = parseSlotRange(sched.time);
       sched.days.forEach(day => {
-        all.push({ courseId: course.id, code: course.code, name: course.name, day, start, end, type, color: colorForCourse(course.id) });
+        all.push({ courseId: course.id, code: course.code, name: course.name, day, start, end, type, color: blockColor(course) });
       });
     };
 
@@ -82,6 +89,19 @@ export default function DraftTimetable({ enrolledCourses, draftCourses, targetCr
           <span className={`draft-tt-credits ${overload ? 'over' : underload ? 'under' : ''}`}>
             {totalCredits} cr{targetCredits > 0 ? ` / ${targetCredits}` : ''}
           </span>
+          {onSave && (
+            <button
+              type="button"
+              className="draft-tt-save"
+              onClick={onSave}
+              disabled={draftCourses.length === 0}
+              title={draftCourses.length === 0 ? 'Add courses to save a draft' : 'Save this draft'}
+              aria-label="Save draft timetable"
+            >
+              <Bookmark size={13} />
+              <span>Save</span>
+            </button>
+          )}
           {onClose && (
             <button
               type="button"
@@ -181,7 +201,7 @@ export default function DraftTimetable({ enrolledCourses, draftCourses, targetCr
                           draftCourses.filter(d => d.id !== c.id).some(d => d.slot === c.slot);
             return (
               <li key={c.id} className={`draft-tt-row ${clash ? 'clash' : ''}`}>
-                <span className="draft-tt-dot" style={{ background: colorForCourse(c.id) }} />
+                <span className="draft-tt-dot" style={{ background: blockColor(c) }} />
                 <span className="draft-tt-row-code">{c.code}</span>
                 <span className="draft-tt-row-slot">{c.slot || '—'}</span>
                 <span className="draft-tt-row-cr">{c.credits}cr</span>

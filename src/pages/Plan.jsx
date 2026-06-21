@@ -15,6 +15,8 @@ import { FILLER_COURSES, deriveGradeStats } from '../utils/mockCourses';
 import PlanOnboarding from '../components/plan/PlanOnboarding';
 import DraftTimetable from '../components/plan/DraftTimetable';
 import GradeStatsPopover from '../components/plan/GradeStatsPopover';
+import { saveDraft } from '../utils/savedDrafts';
+import { useToast } from '../components/Toast';
 import FilterChipSelect from '../components/FilterChipSelect';
 import AdvancedFiltersPanel from '../components/AdvancedFiltersPanel';
 
@@ -62,6 +64,7 @@ const sectionFor = (s) =>
 export default function Plan() {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const toast = useToast();
 
   // Prefs / onboarding
   const [prefs, setPrefs] = useState(() => {
@@ -318,6 +321,22 @@ export default function Plan() {
     setCreditMin(0); setCreditMax(12); setHideClash(false); setSearch('');
   };
 
+  // Save the current draft as a named timetable (shows up under Saved).
+  const [showSaveDraft, setShowSaveDraft] = useState(false);
+  const [draftName, setDraftName] = useState('');
+  const confirmSaveDraft = (e) => {
+    e?.preventDefault();
+    if (draftCourses.length === 0) return;
+    saveDraft({
+      name: draftName.trim() || `${NEXT_SEM_LABEL} draft`,
+      semester: NEXT_SEM_LABEL,
+      courses: draftCourses,
+    });
+    setShowSaveDraft(false);
+    setDraftName('');
+    toast('Draft timetable saved', 'success');
+  };
+
   const SORT_LABELS = {
     match:   { label: 'Best match',   icon: Star },
     grades:  { label: 'Best grades',  icon: BarChart3 },
@@ -519,6 +538,7 @@ export default function Plan() {
               targetCredits={targetCredits}
               onRemoveDraft={removeFromDraft}
               onClose={() => setSidebarHidden(true)}
+              onSave={() => setShowSaveDraft(true)}
             />
           </aside>
         )}
@@ -538,6 +558,41 @@ export default function Plan() {
             <span className="plan-show-draft-count">{draftIds.size}</span>
           )}
         </button>
+      )}
+
+      {/* Save draft timetable modal */}
+      {showSaveDraft && (
+        <div className="modal-overlay" onClick={() => setShowSaveDraft(false)}>
+          <form
+            className="save-draft-modal"
+            onClick={(e) => e.stopPropagation()}
+            onSubmit={confirmSaveDraft}
+          >
+            <div className="save-draft-head">
+              <h3>Save draft timetable</h3>
+              <button type="button" className="save-draft-close" onClick={() => setShowSaveDraft(false)} aria-label="Close">
+                <X size={16} />
+              </button>
+            </div>
+            <p className="save-draft-sub">
+              {draftCourses.length} course{draftCourses.length !== 1 ? 's' : ''} · {NEXT_SEM_LABEL}
+            </p>
+            <label className="save-draft-label" htmlFor="draft-name">Name</label>
+            <input
+              id="draft-name"
+              className="save-draft-input"
+              type="text"
+              autoFocus
+              placeholder={`${NEXT_SEM_LABEL} draft`}
+              value={draftName}
+              onChange={(e) => setDraftName(e.target.value)}
+            />
+            <div className="save-draft-actions">
+              <button type="button" className="btn-ghost" onClick={() => setShowSaveDraft(false)}>Cancel</button>
+              <button type="submit" className="btn-primary" disabled={draftCourses.length === 0}>Save draft</button>
+            </div>
+          </form>
+        </div>
       )}
 
       {/* Advanced filters */}

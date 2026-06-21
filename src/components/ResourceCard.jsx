@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import {
   ThumbsUp, Download, Info, FileText, BookOpen, Presentation, GraduationCap,
-  Trophy, X, Bookmark, BookmarkCheck,
+  Trophy, X, Bookmark, BookmarkCheck, Check,
 } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
+import { isResourceSaved, toggleResourceSaved } from '../utils/savedResources';
 
 /* Resource tile — layout from user wireframe:
    ┌─────────────────────────────────────────┐
@@ -25,36 +26,25 @@ const TYPE_META = {
   tutorial: { Icon: GraduationCap,  label: 'REFERENCE' },
 };
 
-const BOOKMARK_KEY = 'resobin_resource_bookmarks_v1';
-function loadBookmarks() {
-  try { return new Set(JSON.parse(localStorage.getItem(BOOKMARK_KEY)) || []); }
-  catch { return new Set(); }
-}
-function saveBookmarks(set) {
-  try { localStorage.setItem(BOOKMARK_KEY, JSON.stringify([...set])); }
-  catch {}
-}
-
 function isImageUrl(u)  { return /\.(png|jpe?g|gif|webp|svg)$/i.test(u || ''); }
 function isPdfUrl(u)    { return /\.pdf$/i.test(u || ''); }
 
-export default function ResourceCard({ resource, isTop, onChange }) {
+export default function ResourceCard({
+  resource, isTop, onChange,
+  selectable = false, selected = false, selectionActive = false, onToggleSelect,
+}) {
   const { user } = useAuth();
   const [votes, setVotes]       = useState(resource.votes || 0);
   const [userVote, setUserVote] = useState(resource.user_vote || 0);
   const [busy, setBusy]         = useState(false);
   const [showInfo, setShowInfo] = useState(false);
 
-  // Bookmark state — localStorage backed
-  const [bookmarked, setBookmarked] = useState(() => loadBookmarks().has(resource.id));
+  // Bookmark state — localStorage backed (shared with the Saved section)
+  const [bookmarked, setBookmarked] = useState(() => isResourceSaved(resource.id));
   const toggleBookmark = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    const set = loadBookmarks();
-    if (set.has(resource.id)) set.delete(resource.id);
-    else set.add(resource.id);
-    saveBookmarks(set);
-    setBookmarked(set.has(resource.id));
+    setBookmarked(toggleResourceSaved(resource.id));
   };
 
   const meta = TYPE_META[resource.type] || TYPE_META.notes;
@@ -104,8 +94,37 @@ export default function ResourceCard({ resource, isTop, onChange }) {
     }
   };
 
+  const handleSelect = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    onToggleSelect?.(e);
+  };
+
+  // While a selection is in progress, the whole tile becomes a select
+  // target so clicking anywhere toggles (and links don't fire).
+  const previewClick = (e) => {
+    if (selectable && selectionActive) handleSelect(e);
+  };
+
   return (
-    <article className="resource-tile" id={`resource-${resource.id}`}>
+    <article
+      className={`resource-tile ${selectable ? 'is-selectable' : ''} ${selected ? 'is-selected' : ''}`}
+      id={`resource-${resource.id}`}
+    >
+      {selectable && (
+        <button
+          type="button"
+          className={`resource-tile-select ${selected ? 'is-checked' : ''}`}
+          onClick={handleSelect}
+          role="checkbox"
+          aria-checked={selected}
+          aria-label={selected ? 'Deselect resource' : 'Select resource (shift-click to select a range)'}
+          title="Select — shift-click for a range"
+        >
+          {selected && <Check size={13} strokeWidth={3} />}
+        </button>
+      )}
+
       {/* Header — title + tag + hover bookmark */}
       <div className="resource-tile-header">
         <div className="resource-tile-titlebox">
@@ -132,6 +151,7 @@ export default function ResourceCard({ resource, isTop, onChange }) {
         className="resource-tile-preview"
         ref={previewRef}
         aria-label={`Open ${resource.title}`}
+        onClick={previewClick}
       >
         {image ? (
           <img src={resource.file_url} alt="" loading="lazy" />

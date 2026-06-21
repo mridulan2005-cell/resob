@@ -3,6 +3,7 @@ import { Outlet } from 'react-router-dom';
 import RailNav from '../components/RailNav';
 import TopBar from '../components/TopBar';
 import CommandPalette from '../components/CommandPalette';
+import ResQue from '../components/ResQue';
 
 export default function AppLayout() {
   const [collapsed, setCollapsed] = useState(() => {
@@ -44,6 +45,7 @@ export default function AppLayout() {
         </main>
       </div>
       <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} />
+      <ResQue />
     </div>
   );
 }

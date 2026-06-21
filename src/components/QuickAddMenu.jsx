@@ -1,11 +1,14 @@
 import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Plus, Upload, HelpCircle, Calendar, ChevronDown } from 'lucide-react';
+import UploadModal from './UploadModal';
 
-/* Topbar "+ New" — three top-level create actions.
+/* Topbar "New" — three top-level create actions.
    Pattern: GitHub repo "New" dropdown / Linear "Create" menu.
-   Each item routes to the relevant page with ?action= so the
-   target page knows to open the corresponding modal. */
+   "Add to timetable" and "Ask for resource" route to the relevant
+   page with ?action= so the target page opens the matching modal.
+   "Upload resource" opens the UploadModal inline so it works from
+   any page. */
 
 const ITEMS = [
   {
@@ -17,15 +20,23 @@ const ITEMS = [
   },
   {
     id: 'request',
-    label: 'Request resource',
-    sub: 'Ask the community',
+    label: 'Ask for resource',
+    sub: 'Request from the community',
     Icon: HelpCircle,
     to: '/community?action=request',
+  },
+  {
+    id: 'upload',
+    label: 'Upload resource',
+    sub: 'Share notes, PYQs, slides',
+    Icon: Upload,
+    action: 'upload',
   },
 ];
 
 export default function QuickAddMenu() {
   const [open, setOpen] = useState(false);
+  const [showUpload, setShowUpload] = useState(false);
   const ref = useRef(null);
   const navigate = useNavigate();
 
@@ -40,6 +51,12 @@ export default function QuickAddMenu() {
       document.removeEventListener('keydown', onKey);
     };
   }, [open]);
+
+  const handleItem = (item) => {
+    setOpen(false);
+    if (item.action === 'upload') setShowUpload(true);
+    else navigate(item.to);
+  };
 
   return (
     <div className={`quick-add-wrap ${open ? 'open' : ''}`} ref={ref}>
@@ -64,7 +81,7 @@ export default function QuickAddMenu() {
                 type="button"
                 role="menuitem"
                 className="quick-add-item"
-                onClick={() => { setOpen(false); navigate(item.to); }}
+                onClick={() => handleItem(item)}
               >
                 <span className="quick-add-item-icon"><Icon size={15} /></span>
                 <span className="quick-add-item-body">
@@ -75,6 +92,13 @@ export default function QuickAddMenu() {
             );
           })}
         </div>
+      )}
+
+      {showUpload && (
+        <UploadModal
+          onClose={() => setShowUpload(false)}
+          onUploaded={() => setShowUpload(false)}
+        />
       )}
     </div>
   );

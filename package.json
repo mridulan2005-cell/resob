@@ -4,7 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "node scripts/dev-full.mjs",
+    "dev:client": "vite",
+    "server": "node server/index.js",
+    "dev:full": "node scripts/dev-full.mjs",
     "build": "vite build",
     "preview": "vite preview"
   },

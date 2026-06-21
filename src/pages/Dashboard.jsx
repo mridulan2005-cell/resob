@@ -2,8 +2,7 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Bell, BookOpen, FlaskConical, Calendar as CalendarIcon, MapPin,
-  AlertTriangle, Clock, Search, ArrowRight, ArrowUpRight,
-  Sparkles, Upload, FolderOpen, TrendingUp, List as ListIcon,
+  AlertTriangle, Clock, FolderOpen, List as ListIcon,
 } from 'lucide-react';
 import api from '../api/client';
 import { useAuth } from '../context/AuthContext';
@@ -59,33 +58,6 @@ function relativeDayLabel(date, today) {
     return d.toLocaleDateString('en-IN', { weekday: 'long' });
   return d.toLocaleDateString('en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
 }
-
-const QUICK_ACTIONS = [
-  {
-    label: 'Browse community',
-    sub: 'See open requests',
-    to: '/community',
-    Icon: FolderOpen,
-  },
-  {
-    label: 'Plan my timetable',
-    sub: 'Pick courses for next sem',
-    to: '/courses?view=plan',
-    Icon: Sparkles,
-  },
-  {
-    label: 'Request resource',
-    sub: 'Ask the community',
-    to: '/community?action=request',
-    Icon: Upload,
-  },
-  {
-    label: 'Add to timetable',
-    sub: 'Event, reminder, or course',
-    to: '/timetable?action=add',
-    Icon: CalendarIcon,
-  },
-];
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -156,27 +128,6 @@ export default function Dashboard() {
       <div className="dash3-grid">
         {/* ────────── Main column ────────── */}
         <main className="dash3-main">
-          {/* Section heading (no greeting line — keeps page tight) */}
-          <section className="dash3-action-section" aria-label="Quick actions">
-            <div className="dash3-actions-grid">
-              {QUICK_ACTIONS.map(({ label, to }) => (
-                <button
-                  key={label}
-                  type="button"
-                  className="dash3-action-card"
-                  onClick={() => navigate(to)}
-                >
-                  <span className="dash3-action-illust" aria-hidden>
-                    <img src="/action-placeholder.svg" alt="" 
-                    style={{ width: "250px", height: "250px" }}
-                    />
-                  </span>
-                  <span className="dash3-action-title">{label}</span>
-                </button>
-              ))}
-            </div>
-          </section>
-
           {/* Continue where you left off — wide cards with thumbnail area */}
           {recents.length > 0 && (
             <section className="dash3-section" aria-labelledby="dash3-continue-heading">
@@ -210,34 +161,35 @@ export default function Dashboard() {
             </section>
           )}
 
-          {/* Top resource requests — same closed table as Resources page */}
+          {/* Top resource requests — header and rows live inside one
+              framed card (matches reference). */}
           <section className="dash3-requests-section" aria-labelledby="dash3-requests-heading">
-            <div className="dash3-section-head">
-              <h2 id="dash3-requests-heading">Top resource requests</h2>
-              <button
-                type="button"
-                className="link-btn"
-                onClick={() => navigate('/community')}
-              >
-                View all
-              </button>
-            </div>
+            <section className="rt-card requests-card dash3-requests-card" aria-label="Top resource requests">
+              <div className="dash3-requests-cardhead">
+                <h2 id="dash3-requests-heading">Top resource requests</h2>
+                <button
+                  type="button"
+                  className="link-btn"
+                  onClick={() => navigate('/community')}
+                >
+                  View all
+                </button>
+              </div>
 
-            {loading ? (
-              <div className="skeleton" style={{ height: 160, borderRadius: 'var(--radius-md)' }} />
-            ) : topRequests.length === 0 ? (
-              <p className="dash3-empty-line">
-                No open requests right now. Quiet day on the queue.
-              </p>
-            ) : (
-              <section className="rt-card requests-card" aria-label="Top resource requests">
+              {loading ? (
+                <div className="skeleton" style={{ height: 160, borderRadius: 0 }} />
+              ) : topRequests.length === 0 ? (
+                <p className="dash3-empty-line">
+                  No open requests right now. Quiet day on the queue.
+                </p>
+              ) : (
                 <ul className="rt-body">
                   {topRequests.map(r => (
                     <RequestCard key={r.id} request={r} siblingRequests={topRequests} />
                   ))}
                 </ul>
-              </section>
-            )}
+              )}
+            </section>
           </section>
         </main>
 

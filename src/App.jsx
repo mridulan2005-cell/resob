@@ -10,6 +10,7 @@ import Dashboard from './pages/Dashboard';
 import Timetable from './pages/Timetable';
 import Profile from './pages/Profile';
 import Plan from './pages/Plan';
+import Saved from './pages/Saved';
 
 export default function App() {
   return (
@@ -30,6 +31,7 @@ export default function App() {
               <Route path="/community"          element={<Community />} />
               <Route path="/resources"          element={<Navigate to="/community" replace />} />
               <Route path="/dashboard"          element={<Dashboard />} />
+              <Route path="/saved"              element={<Saved />} />
               <Route path="/timetable"          element={<Timetable />} />
               <Route path="/plan"               element={<Plan />} />
               <Route path="/schedule"           element={<Navigate to="/timetable" replace />} />

@@ -177,7 +177,7 @@ export default function Community() {
             <span className="rt-cta-text">Not finding what you want?</span>
             <button
               type="button"
-              className="btn btn-secondary rt-cta-btn"
+              className="btn btn-primary rt-cta-btn"
               onClick={() => setShowRequest(true)}
             >
               <HelpCircle size={14} /> Request resource
